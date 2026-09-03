@@ -1,0 +1,602 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Resume PDF API",
+    "version": "1.0.0",
+    "description": "REST API for generating professional, ATS-friendly and AI-readable resume PDFs\nfrom structured JSON data.\n\nThe API supports multiple visual templates while keeping the resume data model\nindependent from presentation. Generated PDFs use semantic HTML rendered with\nPuppeteer and can be inspected through the PDF validation endpoint.\n",
+    "contact": {
+      "name": "Resume PDF API"
+    },
+    "license": {
+      "name": "Proprietary"
+    }
+  },
+  "tags": [
+    {
+      "name": "Resume",
+      "description": "Resume generation and PDF validation operations."
+    }
+  ],
+  "paths": {
+    "/resume/pdf": {
+      "post": {
+        "tags": [
+          "Resume"
+        ],
+        "summary": "Generate a resume PDF",
+        "description": "Generates a PDF resume from structured resume data.\n\nThe request body contains personal information and optional sections such\nas summary, professional experience, skills, projects, education,\ncertifications and languages.\n\nThe `template` field selects the visual presentation. If omitted, `classic`\nis used.\n",
+        "operationId": "generateResumePdf",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateResumeRequest"
+              },
+              "examples": {
+                "modernResume": {
+                  "summary": "Example resume using the modern template.",
+                  "value": {
+                    "template": "modern",
+                    "personal": {
+                      "firstName": "John",
+                      "lastName": "Doe",
+                      "jobTitle": "Senior Software Engineer",
+                      "email": "john.doe@example.com",
+                      "phone": "+1 555 123 4567",
+                      "location": "Miami, FL",
+                      "linkedin": "https://www.linkedin.com/in/johndoe",
+                      "github": "https://github.com/johndoe",
+                      "website": "https://johndoe.dev"
+                    },
+                    "summary": "Senior Software Engineer with 8+ years of experience building scalable web applications and APIs.",
+                    "experience": [
+                      {
+                        "company": "Example Inc.",
+                        "position": "Senior Software Engineer",
+                        "location": "Remote",
+                        "startDate": "2022-01",
+                        "endDate": "Present",
+                        "description": "Developed and maintained enterprise web applications used by thousands of users.",
+                        "achievements": [
+                          "Reduced API response time by 35%",
+                          "Led migration from AngularJS to Angular",
+                          "Implemented CI/CD pipelines using GitHub Actions"
+                        ],
+                        "technologies": [
+                          "Angular",
+                          "TypeScript",
+                          "Node.js",
+                          "PostgreSQL"
+                        ]
+                      }
+                    ],
+                    "skills": {
+                      "technical": [
+                        "TypeScript",
+                        "JavaScript",
+                        "Angular",
+                        "React",
+                        "Node.js",
+                        "NestJS",
+                        "PostgreSQL",
+                        "Docker"
+                      ],
+                      "soft": [
+                        "Leadership",
+                        "Problem Solving",
+                        "Communication"
+                      ]
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Resume PDF generated successfully.",
+            "headers": {
+              "Content-Disposition": {
+                "description": "Suggested filename for the generated document.",
+                "schema": {
+                  "type": "string",
+                  "example": "attachment; filename=\"resume.pdf\""
+                }
+              }
+            },
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    },
+    "/resume/pdf/validate": {
+      "post": {
+        "tags": [
+          "Resume"
+        ],
+        "summary": "Inspect a generated PDF",
+        "description": "Uploads a PDF and extracts its text and page count.\n\nThis endpoint is intended for diagnostics and document validation. It does\nnot modify the uploaded file.\n",
+        "operationId": "validateResumePdf",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "file"
+                ],
+                "properties": {
+                  "file": {
+                    "type": "string",
+                    "format": "binary",
+                    "description": "PDF document to inspect."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "PDF text extraction completed successfully.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PdfValidationResult"
+                },
+                "example": {
+                  "text": "John Doe\nSenior Software Engineer\njohn.doe@example.com | +1 555 123 4567 | Miami, FL\nPROFESSIONAL SUMMARY\nSenior Software Engineer with 8+ years of experience building scalable web applications and APIs.",
+                  "pageCount": 1
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid upload or unsupported file type.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "invalidFileType": {
+                    "value": {
+                      "statusCode": 400,
+                      "message": "Only PDF files are supported.",
+                      "error": "Bad Request"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CreateResumeRequest": {
+        "type": "object",
+        "required": [
+          "personal",
+          "experience",
+          "skills"
+        ],
+        "properties": {
+          "template": {
+            "$ref": "#/components/schemas/ResumeTemplate"
+          },
+          "personal": {
+            "$ref": "#/components/schemas/PersonalInfo"
+          },
+          "summary": {
+            "type": "string",
+            "description": "Professional summary displayed near the top of the resume.",
+            "example": "Senior Software Engineer with 8+ years of experience building scalable web applications and APIs."
+          },
+          "experience": {
+            "type": "array",
+            "description": "Professional work experience, ordered from most recent to oldest.",
+            "items": {
+              "$ref": "#/components/schemas/Experience"
+            }
+          },
+          "education": {
+            "type": "array",
+            "description": "Academic background.",
+            "items": {
+              "$ref": "#/components/schemas/Education"
+            }
+          },
+          "skills": {
+            "$ref": "#/components/schemas/Skills"
+          },
+          "certifications": {
+            "type": "array",
+            "description": "Professional certifications.",
+            "items": {
+              "$ref": "#/components/schemas/Certification"
+            }
+          },
+          "languages": {
+            "type": "array",
+            "description": "Languages and proficiency levels.",
+            "items": {
+              "$ref": "#/components/schemas/Language"
+            }
+          },
+          "projects": {
+            "type": "array",
+            "description": "Selected professional or personal projects.",
+            "items": {
+              "$ref": "#/components/schemas/Project"
+            }
+          }
+        }
+      },
+      "ResumeTemplate": {
+        "type": "string",
+        "enum": [
+          "classic",
+          "modern",
+          "compact"
+        ],
+        "default": "classic",
+        "description": "Visual template used to render the resume."
+      },
+      "PersonalInfo": {
+        "type": "object",
+        "required": [
+          "firstName",
+          "lastName",
+          "jobTitle",
+          "email"
+        ],
+        "properties": {
+          "firstName": {
+            "type": "string",
+            "example": "John"
+          },
+          "lastName": {
+            "type": "string",
+            "example": "Doe"
+          },
+          "jobTitle": {
+            "type": "string",
+            "example": "Senior Software Engineer"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "example": "john.doe@example.com"
+          },
+          "phone": {
+            "type": "string",
+            "example": "+1 555 123 4567"
+          },
+          "location": {
+            "type": "string",
+            "example": "Miami, FL"
+          },
+          "linkedin": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://www.linkedin.com/in/johndoe"
+          },
+          "github": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://github.com/johndoe"
+          },
+          "website": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://johndoe.dev"
+          }
+        }
+      },
+      "Experience": {
+        "type": "object",
+        "required": [
+          "company",
+          "position",
+          "startDate",
+          "achievements"
+        ],
+        "properties": {
+          "company": {
+            "type": "string",
+            "example": "Example Inc."
+          },
+          "position": {
+            "type": "string",
+            "example": "Senior Software Engineer"
+          },
+          "location": {
+            "type": "string",
+            "example": "Remote"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2022-01"
+          },
+          "endDate": {
+            "type": "string",
+            "description": "Use `Present` for the current position when appropriate.",
+            "example": "Present"
+          },
+          "description": {
+            "type": "string",
+            "example": "Developed and maintained enterprise web applications used by thousands of users."
+          },
+          "achievements": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Reduced API response time by 35%",
+              "Led migration from AngularJS to Angular"
+            ]
+          },
+          "technologies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Angular",
+              "TypeScript",
+              "Node.js"
+            ]
+          }
+        }
+      },
+      "Education": {
+        "type": "object",
+        "required": [
+          "institution",
+          "degree",
+          "startDate",
+          "endDate"
+        ],
+        "properties": {
+          "institution": {
+            "type": "string",
+            "example": "University of Example"
+          },
+          "degree": {
+            "type": "string",
+            "example": "Bachelor of Computer Science"
+          },
+          "fieldOfStudy": {
+            "type": "string",
+            "example": "Computer Science"
+          },
+          "location": {
+            "type": "string",
+            "example": "Miami, FL"
+          },
+          "startDate": {
+            "type": "string",
+            "example": "2013"
+          },
+          "endDate": {
+            "type": "string",
+            "example": "2017"
+          }
+        }
+      },
+      "Skills": {
+        "type": "object",
+        "required": [
+          "technical"
+        ],
+        "properties": {
+          "technical": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "TypeScript",
+              "JavaScript",
+              "Angular",
+              "Node.js",
+              "PostgreSQL",
+              "Docker"
+            ]
+          },
+          "soft": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Leadership",
+              "Problem Solving",
+              "Communication"
+            ]
+          }
+        }
+      },
+      "Certification": {
+        "type": "object",
+        "required": [
+          "name",
+          "issuer"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "AWS Certified Developer - Associate"
+          },
+          "issuer": {
+            "type": "string",
+            "example": "Amazon Web Services"
+          },
+          "date": {
+            "type": "string",
+            "example": "2025"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.com/verification"
+          }
+        }
+      },
+      "Language": {
+        "type": "object",
+        "required": [
+          "name",
+          "level"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "English"
+          },
+          "level": {
+            "type": "string",
+            "example": "Professional"
+          }
+        }
+      },
+      "Project": {
+        "type": "object",
+        "required": [
+          "name",
+          "description"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Inventory Management System"
+          },
+          "description": {
+            "type": "string",
+            "example": "A web-based inventory management platform for managing products, warehouses and stock movements."
+          },
+          "technologies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "example": [
+              "Angular",
+              "NestJS",
+              "PostgreSQL"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://github.com/johndoe/inventory-management"
+          }
+        }
+      },
+      "PdfValidationResult": {
+        "type": "object",
+        "required": [
+          "text",
+          "pageCount"
+        ],
+        "properties": {
+          "text": {
+            "type": "string",
+            "description": "Text extracted from the uploaded PDF.",
+            "example": "John Doe\\nSenior Software Engineer"
+          },
+          "pageCount": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "Number of pages detected in the PDF.",
+            "example": 1
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "statusCode": {
+            "type": "integer",
+            "example": 400
+          },
+          "message": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            ],
+            "example": "Validation failed."
+          },
+          "error": {
+            "type": "string",
+            "example": "Bad Request"
+          }
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Request validation failed.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "statusCode": 400,
+              "message": [
+                "personal.email must be an email"
+              ],
+              "error": "Bad Request"
+            }
+          }
+        }
+      },
+      "InternalServerError": {
+        "description": "Unexpected server-side error.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            },
+            "example": {
+              "statusCode": 500,
+              "message": "Internal server error",
+              "error": "Internal Server Error"
+            }
+          }
+        }
+      }
+    }
+  }
+}
