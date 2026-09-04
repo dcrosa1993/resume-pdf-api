@@ -13,10 +13,17 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+  
+  app.enableCors({
+    origin: ['http://localhost:4200', 'https://tu-frontend.com'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  });
 
   const config = new DocumentBuilder()
     .setTitle('Resume PDF API')
-    .setDescription('API for generating ATS and AI-friendly resumes in PDF format')
+    .setDescription(
+      'API for generating ATS and AI-friendly resumes in PDF format',
+    )
     .setVersion('1.0')
     .build();
 
