@@ -5,13 +5,16 @@ FROM node:24-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Copiar dependencias
+# Prevent Puppeteer from downloading Chrome during npm install.
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
+# Copy dependency files
 COPY package*.json ./
 
-# Instalar dependencias
+# Install dependencies
 RUN npm ci
 
-# Copiar código fuente
+# Copy source code
 COPY . .
 
 # Build NestJS
@@ -25,10 +28,15 @@ FROM node:24-bookworm-slim
 
 WORKDIR /app
 
-
 ENV NODE_ENV=production
 
-# Dependencias necesarias para Chrome/Puppeteer
+# Prevent Puppeteer from downloading Chrome during npm install.
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+
+# Puppeteer browser cache
+ENV PUPPETEER_CACHE_DIR=/root/.cache/puppeteer
+
+# Chrome runtime dependencies
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
         ca-certificates \
@@ -59,23 +67,24 @@ RUN apt-get update \
         libxext6 \
         libxfixes3 \
         libxrandr2 \
-        wget \
+        unzip \
     && rm -rf /var/lib/apt/lists/*
 
-# Copiar package files
+# Copy dependency files
 COPY package*.json ./
 
-# Instalar solamente producción
+# Install production dependencies without downloading Chrome
 RUN npm ci --omit=dev
 
-# Copiar build
+# Copy compiled application
 COPY --from=builder /app/dist ./dist
 
-# Puppeteer cache será compartida entre instalación y runtime
-ENV PUPPETEER_CACHE_DIR=/root/.cache/puppeteer
+# Remove any incomplete Puppeteer installation
+RUN npx puppeteer browsers clear
 
-# Descargar Chrome dentro de la imagen
-RUN npx puppeteer browsers install chrome
+# Install the Chrome version pinned by the current Puppeteer version
+RUN PUPPETEER_SKIP_DOWNLOAD=false \
+    npx puppeteer browsers install chrome
 
 EXPOSE 3000
 
