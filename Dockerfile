@@ -76,6 +76,8 @@ COPY package*.json ./
 # Install production dependencies without downloading Chrome
 RUN npm ci --omit=dev
 
+RUN npm build
+
 # Copy compiled application
 COPY --from=builder /app/dist ./dist
 
