@@ -32,8 +32,7 @@ jobs:
         with:
           push: true
           tags: denismaycr/personal_projects:cv_backend_latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          no-cache: true
           build-args: |
             NODE_ENV=development
 
