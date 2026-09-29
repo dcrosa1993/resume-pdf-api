@@ -21,7 +21,13 @@ export class PdfService implements OnModuleDestroy {
     return this.browser;
   }
 
-  async generateResumePdf(resume: CreateResumeDto): Promise<Buffer> {
+  async generateResumePdf(
+    resume: CreateResumeDto,
+    photo?: {
+      buffer: Buffer;
+      mimetype: string;
+    },
+  ): Promise<Buffer> {
     const browser = await this.getBrowser();
     const page = await browser.newPage();
 
@@ -34,7 +40,16 @@ export class PdfService implements OnModuleDestroy {
         throw new Error(`Resume template "${template}" is not available.`);
       }
 
-      const html = renderer(resume);
+      if (!renderer) {
+        throw new Error(`Resume template "${template}" is not available.`);
+      }
+      const photoDataUrl = photo
+        ? `data:${photo.mimetype};base64,${photo.buffer.toString('base64')}`
+        : undefined;
+
+      const html = renderer(resume, {
+        photoDataUrl,
+      });
 
       await page.setContent(html, {
         waitUntil: 'load',

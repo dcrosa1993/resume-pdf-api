@@ -1,4 +1,5 @@
 import { CreateResumeDto } from '../dto/create-resume.dto.js';
+import { ResumeTemplateContext } from './template.types.js';
 
 function escapeHtml(value: string): string {
   return value
@@ -329,8 +330,20 @@ function renderLanguages(resume: CreateResumeDto): string {
   `;
 }
 
-export function buildModernResumeHtml(resume: CreateResumeDto): string {
+export function buildModernResumeHtml(
+  resume: CreateResumeDto,
+  context: ResumeTemplateContext = {},
+): string {
   const fullName = `${resume.personal.firstName} ${resume.personal.lastName}`;
+  const profilePhoto = context.photoDataUrl
+    ? `
+      <img
+        class="profile-photo"
+        src="${context.photoDataUrl}"
+        alt="Profile photo"
+      />
+    `
+    : '';
 
   return `
     <!DOCTYPE html>
@@ -524,6 +537,25 @@ export function buildModernResumeHtml(resume: CreateResumeDto): string {
           .language span {
             color: #6b7280;
           }
+            .header-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              gap: 20px;
+            }
+
+            .header-info {
+              min-width: 0;
+            }
+
+            .profile-photo {
+              width: 82px;
+              height: 82px;
+              flex-shrink: 0;
+              object-fit: cover;
+              border-radius: 50%;
+              border: 2px solid #e5e7eb;
+            }
 
           @media print {
             .experience-item,
@@ -547,13 +579,21 @@ export function buildModernResumeHtml(resume: CreateResumeDto): string {
       <body>
         <main class="resume">
           <header>
-            <h1>${escapeHtml(fullName)}</h1>
+            <div class="header-row">
 
-            <div class="job-title">
-              ${escapeHtml(resume.personal.jobTitle)}
+              <div class="header-info">
+                <h1>${escapeHtml(fullName)}</h1>
+
+                <div class="job-title">
+                  ${escapeHtml(resume.personal.jobTitle)}
+                </div>
+
+                ${renderContactInfo(resume)}
+              </div>
+
+              ${profilePhoto}
+
             </div>
-
-            ${renderContactInfo(resume)}
           </header>
 
           ${

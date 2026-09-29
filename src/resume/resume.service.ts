@@ -12,24 +12,22 @@ export class ResumeService {
 
   async generatePdf(
     resume: CreateResumeDto,
+    photo?: {
+      buffer: Buffer;
+      mimetype: string;
+    },
   ): Promise<Buffer> {
-    const pdf =
-      await this.pdfService.generateResumePdf(resume);
+    const pdf = await this.pdfService.generateResumePdf(resume, photo);
 
-    const fullName =
-      `${resume.personal.firstName} ${resume.personal.lastName}`;
+    const fullName = `${resume.personal.firstName} ${resume.personal.lastName}`;
 
-    const validation =
-      await this.pdfValidationService.validate(pdf, {
-        fullName,
-        jobTitle: resume.personal.jobTitle,
-      });
+    const validation = await this.pdfValidationService.validate(pdf, {
+      fullName,
+      jobTitle: resume.personal.jobTitle,
+    });
 
     if (!validation.valid) {
-      console.error(
-        'Generated PDF failed validation:',
-        validation,
-      );
+      console.error('Generated PDF failed validation:', validation);
     }
 
     return pdf;

@@ -3,9 +3,12 @@ import {
   BadRequestException,
   Body,
   Controller,
+  FileTypeValidator,
   Header,
   HttpCode,
   HttpStatus,
+  MaxFileSizeValidator,
+  ParseFilePipe,
   Post,
   Res,
   UploadedFile,
@@ -24,6 +27,8 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import type { Multer } from 'multer';
 
+import { ParseResumeBodyPipe } from './pipes/parse-resume-body.pipe.js';
+
 @ApiTags('Resume')
 @Controller('resume')
 export class ResumeController {
@@ -34,10 +39,44 @@ export class ResumeController {
 
   @Post('pdf')
   @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('photo'))
+  @ApiConsumes('application/json', 'multipart/form-data')
   @ApiOperation({
     summary: 'Generate resume PDF',
     description:
-      'Receives resume information and generates an ATS/AI-friendly PDF.',
+      'Generates an ATS/AI-friendly resume PDF. The resume can be sent as JSON or as a JSON string inside multipart/form-data. A profile photo can optionally be uploaded using the "photo" field.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['resume'],
+      properties: {
+        resume: {
+          type: 'string',
+          description: 'JSON string containing the resume data.',
+          example: JSON.stringify({
+            template: 'modern',
+            personal: {
+              firstName: 'John',
+              lastName: 'Doe',
+              jobTitle: 'Senior Software Engineer',
+              email: 'john.doe@example.com',
+            },
+            experience: [],
+            skills: {
+              technical: [],
+              soft: [],
+            },
+          }),
+        },
+        photo: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'Optional profile photo. Supported formats: JPEG, PNG and WebP.',
+        },
+      },
+    },
   })
   @ApiResponse({
     status: 200,
@@ -53,66 +92,43 @@ export class ResumeController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Invalid resume data.',
+    description: 'Invalid resume data or invalid profile photo.',
   })
-  @Header('Content-Type', 'application/pdf')
   async generatePdf(
-    @Body() resume: CreateResumeDto,
-    @Res() response: Response,
+    @Body(ParseResumeBodyPipe)
+    resume: CreateResumeDto,
+
+    @UploadedFile(
+      new ParseFilePipe({
+        fileIsRequired: false,
+
+        validators: [
+          new MaxFileSizeValidator({
+            maxSize: 3 * 1024 * 1024,
+          }),
+
+          new FileTypeValidator({
+            fileType: /^image\/(jpeg|png|webp)$/,
+          }),
+        ],
+      }),
+    )
+    photo:
+      | {
+          buffer: Buffer;
+          mimetype: string;
+        }
+      | undefined,
+
+    @Res()
+    response: Response,
   ): Promise<void> {
-    const pdf = await this.resumeService.generatePdf(resume);
+    const pdf = await this.resumeService.generatePdf(resume, photo);
 
-    response.setHeader(
-      'Content-Disposition',
-      'attachment; filename="resume.pdf"',
-    );
-
-    response.send(pdf);
-  }
-@Post('pdf/validate')
-  @HttpCode(HttpStatus.OK)
-  @UseInterceptors(
-    FileInterceptor('file'),
-  )
-  @ApiOperation({
-    summary: 'Analyze PDF text extraction',
-    description:
-      'Analyzes a PDF and returns the text extracted from it. Useful for verifying ATS/AI readability.',
-  })
-  @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        file: {
-          type: 'string',
-          format: 'binary',
-        },
-      },
-      required: ['file'],
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'PDF analyzed successfully.',
-  })
-  async validatePdf(
-    @UploadedFile() file: Express.Multer.File,
-  ) {
-    if (!file) {
-      throw new BadRequestException(
-        'PDF file is required.',
-      );
-    }
-
-    if (file.mimetype !== 'application/pdf') {
-      throw new BadRequestException(
-        'Only PDF files are allowed.',
-      );
-    }
-
-    return this.pdfValidationService.extractText(
-      file.buffer,
-    );
+    response
+      .status(HttpStatus.OK)
+      .type('application/pdf')
+      .setHeader('Content-Disposition', 'attachment; filename="resume.pdf"')
+      .send(pdf);
   }
 }
