@@ -1,5 +1,9 @@
 import { CreateResumeDto } from '../dto/create-resume.dto.js';
 import { ResumeTemplateContext } from './template.types.js';
+import { ResumeLanguage } from '../enums/resume-language.enum.js';
+import { getResumeLabels } from '../i18n/resume-labels.js';
+
+type ResumeLabels = ReturnType<typeof getResumeLabels>;
 
 function escapeHtml(value: string): string {
   return value
@@ -123,7 +127,10 @@ function renderProjects(resume: CreateResumeDto): string {
   `;
 }
 
-function renderExperience(resume: CreateResumeDto): string {
+function renderExperience(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.experience?.length) {
     return '';
   }
@@ -200,7 +207,7 @@ function renderExperience(resume: CreateResumeDto): string {
                 <div class="experience-date">
                   ${escapeHtml(item.startDate)}
                   —
-                  ${escapeHtml(item.endDate ?? 'Present')}
+                  ${escapeHtml(item.endDate ?? labels.present)}
                 </div>
 
               </article>
@@ -212,7 +219,10 @@ function renderExperience(resume: CreateResumeDto): string {
   `;
 }
 
-function renderSkills(resume: CreateResumeDto): string {
+function renderSkills(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   const technical = resume.skills?.technical ?? [];
 
   const soft = resume.skills?.soft ?? [];
@@ -228,7 +238,7 @@ function renderSkills(resume: CreateResumeDto): string {
           Toolkit
         </span>
 
-        <h2>Skills</h2>
+        <h2>${labels.skills}</h2>
       </div>
 
       <div class="skills">
@@ -284,7 +294,10 @@ function renderSkills(resume: CreateResumeDto): string {
   `;
 }
 
-function renderEducation(resume: CreateResumeDto): string {
+function renderEducation(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.education?.length) {
     return '';
   }
@@ -296,7 +309,7 @@ function renderEducation(resume: CreateResumeDto): string {
           Academic Background
         </span>
 
-        <h2>Education</h2>
+        <h2>${labels.education}</h2>
       </div>
 
       <div class="education">
@@ -338,7 +351,10 @@ function renderEducation(resume: CreateResumeDto): string {
   `;
 }
 
-function renderCertifications(resume: CreateResumeDto): string {
+function renderCertifications(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.certifications?.length) {
     return '';
   }
@@ -350,7 +366,7 @@ function renderCertifications(resume: CreateResumeDto): string {
           Credentials
         </span>
 
-        <h2>Certifications</h2>
+        <h2>${labels.certifications}</h2>
       </div>
 
       <div class="certifications">
@@ -388,7 +404,10 @@ function renderCertifications(resume: CreateResumeDto): string {
   `;
 }
 
-function renderLanguages(resume: CreateResumeDto): string {
+function renderLanguages(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.languages?.length) {
     return '';
   }
@@ -400,7 +419,7 @@ function renderLanguages(resume: CreateResumeDto): string {
           Communication
         </span>
 
-        <h2>Languages</h2>
+        <h2>${labels.languages}</h2>
       </div>
 
       <div class="languages">
@@ -428,6 +447,10 @@ export function buildShowcaseResumeHtml(
   resume: CreateResumeDto,
   context: ResumeTemplateContext = {},
 ): string {
+  const labels = getResumeLabels(
+    resume.language ?? ResumeLanguage.ENGLISH,
+  );
+
   const fullName = `${resume.personal.firstName} ${resume.personal.lastName}`;
 
   const profilePhoto = context.photoDataUrl
@@ -443,7 +466,7 @@ export function buildShowcaseResumeHtml(
   return `
     <!DOCTYPE html>
 
-    <html lang="en">
+    <html lang="${escapeHtml(resume.language ?? ResumeLanguage.ENGLISH)}">
 
       <head>
         <meta charset="UTF-8" />
@@ -993,15 +1016,15 @@ export function buildShowcaseResumeHtml(
 
           ${renderProjects(resume)}
 
-          ${renderExperience(resume)}
+          ${renderExperience(resume, labels)}
 
-          ${renderSkills(resume)}
+          ${renderSkills(resume, labels)}
 
-          ${renderEducation(resume)}
+          ${renderEducation(resume, labels)}
 
-          ${renderCertifications(resume)}
+          ${renderCertifications(resume, labels)}
 
-          ${renderLanguages(resume)}
+          ${renderLanguages(resume, labels)}
 
         </main>
 

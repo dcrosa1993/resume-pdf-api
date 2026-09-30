@@ -1,5 +1,9 @@
 import { CreateResumeDto } from '../dto/create-resume.dto.js';
 import { ResumeTemplateContext } from './template.types.js';
+import { ResumeLanguage } from '../enums/resume-language.enum.js';
+import { getResumeLabels } from '../i18n/resume-labels.js';
+
+type ResumeLabels = ReturnType<typeof getResumeLabels>;
 
 function escapeHtml(value: string): string {
   return value
@@ -68,14 +72,17 @@ function renderContactInfo(resume: CreateResumeDto): string {
   `;
 }
 
-function renderExperience(resume: CreateResumeDto): string {
+function renderExperience(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.experience?.length) {
     return '';
   }
 
   return `
     <section>
-      <div class="section-title">Professional Experience</div>
+      <div class="section-title">${labels.experience}</div>
 
       ${resume.experience
         .map(
@@ -94,7 +101,7 @@ function renderExperience(resume: CreateResumeDto): string {
                 <div class="date">
                   ${escapeHtml(item.startDate)}
                   -
-                  ${escapeHtml(item.endDate ?? 'Present')}
+                  ${escapeHtml(item.endDate ?? labels.present)}
                 </div>
               </div>
 
@@ -130,14 +137,17 @@ function renderExperience(resume: CreateResumeDto): string {
   `;
 }
 
-function renderSkills(resume: CreateResumeDto): string {
+function renderSkills(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.skills?.technical?.length && !resume.skills?.soft?.length) {
     return '';
   }
 
   return `
     <section>
-      <div class="section-title">Skills</div>
+      <div class="section-title">${labels.skills}</div>
 
       ${
         resume.skills.technical?.length
@@ -172,14 +182,17 @@ function renderSkills(resume: CreateResumeDto): string {
   `;
 }
 
-function renderProjects(resume: CreateResumeDto): string {
+function renderProjects(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.projects?.length) {
     return '';
   }
 
   return `
     <section>
-      <div class="section-title">Projects</div>
+      <div class="section-title">${labels.projects}</div>
 
       ${resume.projects
         .map(
@@ -222,14 +235,17 @@ function renderProjects(resume: CreateResumeDto): string {
   `;
 }
 
-function renderEducation(resume: CreateResumeDto): string {
+function renderEducation(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.education?.length) {
     return '';
   }
 
   return `
     <section>
-      <div class="section-title">Education</div>
+      <div class="section-title">${labels.education}</div>
 
       ${resume.education
         .map(
@@ -266,14 +282,17 @@ function renderEducation(resume: CreateResumeDto): string {
   `;
 }
 
-function renderCertifications(resume: CreateResumeDto): string {
+function renderCertifications(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.certifications?.length) {
     return '';
   }
 
   return `
     <section>
-      <div class="section-title">Certifications</div>
+      <div class="section-title">${labels.certifications}</div>
 
       ${resume.certifications
         .map(
@@ -305,14 +324,17 @@ function renderCertifications(resume: CreateResumeDto): string {
   `;
 }
 
-function renderLanguages(resume: CreateResumeDto): string {
+function renderLanguages(
+  resume: CreateResumeDto,
+  labels: ResumeLabels,
+): string {
   if (!resume.languages?.length) {
     return '';
   }
 
   return `
     <section>
-      <div class="section-title">Languages</div>
+      <div class="section-title">${labels.languages}</div>
 
       <div class="languages">
         ${resume.languages
@@ -334,6 +356,10 @@ export function buildModernResumeHtml(
   resume: CreateResumeDto,
   context: ResumeTemplateContext = {},
 ): string {
+  const labels = getResumeLabels(
+    resume.language ?? ResumeLanguage.ENGLISH,
+  );
+
   const fullName = `${resume.personal.firstName} ${resume.personal.lastName}`;
   const profilePhoto = context.photoDataUrl
     ? `
@@ -347,7 +373,7 @@ export function buildModernResumeHtml(
 
   return `
     <!DOCTYPE html>
-    <html lang="en">
+    <html lang="${escapeHtml(resume.language ?? ResumeLanguage.ENGLISH)}">
       <head>
         <meta charset="UTF-8" />
 
@@ -601,7 +627,7 @@ export function buildModernResumeHtml(
               ? `
                 <section>
                   <div class="section-title">
-                    Professional Summary
+                    ${labels.summary}
                   </div>
 
                   <p class="summary">
@@ -612,12 +638,12 @@ export function buildModernResumeHtml(
               : ''
           }
 
-          ${renderExperience(resume)}
-          ${renderSkills(resume)}
-          ${renderProjects(resume)}
-          ${renderEducation(resume)}
-          ${renderCertifications(resume)}
-          ${renderLanguages(resume)}
+          ${renderExperience(resume, labels)}
+          ${renderSkills(resume, labels)}
+          ${renderProjects(resume, labels)}
+          ${renderEducation(resume, labels)}
+          ${renderCertifications(resume, labels)}
+          ${renderLanguages(resume, labels)}
         </main>
       </body>
     </html>

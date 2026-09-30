@@ -10,6 +10,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ResumeLanguage } from '../enums/resume-language.enum.js';
 
 export class PersonalInfoDto {
   @ApiProperty({
@@ -324,7 +325,10 @@ export class CreateResumeDto {
   @IsOptional()
   @IsEnum(ResumeTemplate)
   template?: ResumeTemplate = ResumeTemplate.CLASSIC;
-  
+  @IsOptional()
+  @IsEnum(ResumeLanguage)
+  language?: ResumeLanguage = ResumeLanguage.ENGLISH;
+
   @ApiProperty({
     type: PersonalInfoDto,
     description: 'Candidate personal and contact information',
