@@ -139,10 +139,10 @@ function renderExperience(
     <section class="section">
       <div class="section-heading">
         <span class="section-kicker">
-          Professional Background
+          ${escapeHtml(labels.professionalBackground)}
         </span>
 
-        <h2>Experience</h2>
+        <h2>${escapeHtml(labels.experience2)}</h2>
       </div>
 
       <div class="experience">
@@ -235,7 +235,7 @@ function renderSkills(
     <section class="section">
       <div class="section-heading">
         <span class="section-kicker">
-          Toolkit
+          ${escapeHtml(labels.toolkit)}
         </span>
 
         <h2>${labels.skills}</h2>
@@ -248,7 +248,7 @@ function renderSkills(
             ? `
               <div class="skill-group">
                 <div class="skill-label">
-                  Technical
+                  ${escapeHtml(labels.technical)}
                 </div>
 
                 <div class="skill-list">
@@ -271,7 +271,7 @@ function renderSkills(
             ? `
               <div class="skill-group">
                 <div class="skill-label">
-                  Professional
+                  ${escapeHtml(labels.professional)}
                 </div>
 
                 <div class="skill-list">
@@ -306,7 +306,7 @@ function renderEducation(
     <section class="section">
       <div class="section-heading">
         <span class="section-kicker">
-          Academic Background
+          ${escapeHtml(labels.academicBackground)}
         </span>
 
         <h2>${labels.education}</h2>
@@ -416,7 +416,7 @@ function renderLanguages(
     <section class="section">
       <div class="section-heading">
         <span class="section-kicker">
-          Communication
+          ${escapeHtml(labels.communication)}
         </span>
 
         <h2>${labels.languages}</h2>
@@ -999,10 +999,10 @@ export function buildShowcaseResumeHtml(
 
                   <div class="section-heading">
                     <span class="section-kicker">
-                      Profile
+                      ${escapeHtml(labels.profile)}
                     </span>
 
-                    <h2>About Me</h2>
+                    <h2>${escapeHtml(labels.aboutMe)}</h2>
                   </div>
 
                   <p class="summary">
