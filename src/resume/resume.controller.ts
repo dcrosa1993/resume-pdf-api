@@ -131,4 +131,40 @@ export class ResumeController {
       .setHeader('Content-Disposition', 'attachment; filename="resume.pdf"')
       .send(pdf);
   }
+  @Post('pdf/validate')
+  @HttpCode(HttpStatus.OK)
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({
+    summary: 'Analyze PDF text extraction',
+    description:
+      'Analyzes a PDF and returns the text extracted from it. Useful for verifying ATS/AI readability.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+      required: ['file'],
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'PDF analyzed successfully.',
+  })
+  async validatePdf(@UploadedFile() file: Express.Multer.File) {
+    if (!file) {
+      throw new BadRequestException('PDF file is required.');
+    }
+
+    if (file.mimetype !== 'application/pdf') {
+      throw new BadRequestException('Only PDF files are allowed.');
+    }
+
+    return this.pdfValidationService.extractText(file.buffer);
+  }
 }
