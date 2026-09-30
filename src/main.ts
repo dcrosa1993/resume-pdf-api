@@ -15,7 +15,7 @@ async function bootstrap() {
   );
   
   app.enableCors({
-    origin: ['http://localhost:4200', 'https://tu-frontend.com'],
+    origin: ['http://localhost:4200', 'https://cv.may.cu'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   });
 
