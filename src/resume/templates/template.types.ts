@@ -6,6 +6,7 @@ export enum ResumeTemplate {
   CLASSIC = 'classic',
   MODERN = 'modern',
   COMPACT = 'compact',
+  SHOWCASE = 'showcase',
 }
 
 export interface ResumeTemplateContext {

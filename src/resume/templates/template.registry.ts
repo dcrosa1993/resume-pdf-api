@@ -7,6 +7,7 @@ import { buildClassicResumeHtml } from './classic.template.js';
 import { buildModernResumeHtml } from './modern.template.js';
 
 import { buildCompactResumeHtml } from './compact.template.js';
+import { buildShowcaseResumeHtml } from './showcase.template.js';
 
 export type ResumeTemplateRenderer = (
   resume: CreateResumeDto,
@@ -20,4 +21,5 @@ export const RESUME_TEMPLATES: Record<ResumeTemplate, ResumeTemplateRenderer> =
     [ResumeTemplate.MODERN]: buildModernResumeHtml,
 
     [ResumeTemplate.COMPACT]: buildCompactResumeHtml,
+    [ResumeTemplate.SHOWCASE]: buildShowcaseResumeHtml,
   };
