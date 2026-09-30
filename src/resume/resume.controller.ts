@@ -26,8 +26,7 @@ import { ResumeService } from './resume.service.js';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import type { Multer } from 'multer';
-
-import { ParseResumeBodyPipe } from './pipes/parse-resume-body.pipe.js';
+import { ParseResumeMultipartInterceptor } from './interceptors/parse-resume-multipart.interceptor.js';
 
 @ApiTags('Resume')
 @Controller('resume')
@@ -39,7 +38,7 @@ export class ResumeController {
 
   @Post('pdf')
   @HttpCode(HttpStatus.OK)
-  @UseInterceptors(FileInterceptor('photo'))
+  @UseInterceptors(FileInterceptor('photo'), ParseResumeMultipartInterceptor)
   @ApiConsumes('application/json', 'multipart/form-data')
   @ApiOperation({
     summary: 'Generate resume PDF',
@@ -95,7 +94,7 @@ export class ResumeController {
     description: 'Invalid resume data or invalid profile photo.',
   })
   async generatePdf(
-    @Body(ParseResumeBodyPipe)
+    @Body()
     resume: CreateResumeDto,
 
     @UploadedFile(
